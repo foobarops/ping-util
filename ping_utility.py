@@ -3,6 +3,7 @@ import time
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
+from tabulate import tabulate
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
@@ -14,22 +15,24 @@ def ping_host(host, count):
         # Ping the host using the 'ping' command
         output = subprocess.run(["ping", param, str(count), host], capture_output=True, text=True)
         if output.returncode == 0:
-            return f"{Fore.GREEN}{host} is online{Style.RESET_ALL}"
+            return (host, f"{Fore.GREEN}Online{Style.RESET_ALL}")
         else:
-            return f"{Fore.RED}{host} is offline{Style.RESET_ALL}"
+            return (host, f"{Fore.RED}Offline{Style.RESET_ALL}")
     except Exception as e:
-        return f"{Fore.YELLOW}Error pinging {host}: {str(e)}{Style.RESET_ALL}"
+        return (host, f"{Fore.YELLOW}Error: {str(e)}{Style.RESET_ALL}")
 
 def ping_hosts_concurrently(hosts, count):
+    results = []
     with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
         futures = {executor.submit(ping_host, host, count): host for host in hosts}
         for future in as_completed(futures):
             host = futures[future]
             try:
                 result = future.result()
-                print(result)
+                results.append(result)
             except Exception as e:
-                print(f"Error occurred while pinging {host}: {e}")
+                results.append((host, f"Error occurred: {e}"))
+    return results
 
 if __name__ == "__main__":
     # Default values
@@ -60,8 +63,16 @@ if __name__ == "__main__":
     # Loop to ping hosts constantly
     while True:
         print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        ping_hosts_concurrently(hosts, count)
-
+        
+        # Ping hosts and get results
+        results = ping_hosts_concurrently(hosts, count)
+        
+        # Format results in a table
+        table = tabulate(results, headers=["Host", "Status"], tablefmt="grid")
+        
+        # Print the table
+        print(table)
+        
         # Wait for the next interval
         time.sleep(interval)
         print("\n" + "-"*40 + "\n")
