@@ -5,8 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def ping_host(host, count):
     try:
+        # Determine the parameter for ping count based on the OS
+        param = '-n' if sys.platform.lower().startswith('win') else '-c'
         # Ping the host using the 'ping' command
-        output = subprocess.run(["ping", "-c", str(count), host], capture_output=True, text=True)
+        output = subprocess.run(["ping", param, str(count), host], capture_output=True, text=True)
         if output.returncode == 0:
             return f"{host} is online"
         else:
@@ -26,25 +28,30 @@ def ping_hosts_concurrently(hosts, count):
                 print(f"Error occurred while pinging {host}: {e}")
 
 if __name__ == "__main__":
-    # Handle command-line arguments
-    if len(sys.argv) < 2:
-        print("Usage: python script.py [count] [interval] host1 host2 ... hostN")
-        sys.exit(1)
-    
-    # First parameter: count of pings (default 4)
-    try:
-        count = int(sys.argv[1])
-    except (IndexError, ValueError):
-        count = 4
-    
-    # Second parameter: interval between pings (default 10 seconds)
-    try:
-        interval = int(sys.argv[2])
-    except (IndexError, ValueError):
-        interval = 10
+    # Default values
+    count = 4
+    interval = 10
+    hosts = []
 
-    # Rest of the parameters: hosts to ping
-    hosts = sys.argv[3:] if len(sys.argv) > 3 else ["google.com", "example.com", "localhost"]
+    args = sys.argv[1:]
+    idx = 0
+
+    # Parse count if provided
+    if idx < len(args) and args[idx].isdigit():
+        count = int(args[idx])
+        idx += 1
+
+    # Parse interval if provided
+    if idx < len(args) and args[idx].isdigit():
+        interval = int(args[idx])
+        idx += 1
+
+    # Remaining arguments are hosts
+    hosts = args[idx:]
+
+    if not hosts:
+        print("Usage: python script.py [count] [interval] host1 host2 ...")
+        sys.exit(1)
 
     # Loop to ping hosts constantly
     while True:
