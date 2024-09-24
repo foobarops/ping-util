@@ -2,6 +2,10 @@ import subprocess
 import time
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from colorama import Fore, Style, init
+
+# Initialize colorama for cross-platform support
+init(autoreset=True)
 
 def ping_host(host, count):
     try:
@@ -10,11 +14,11 @@ def ping_host(host, count):
         # Ping the host using the 'ping' command
         output = subprocess.run(["ping", param, str(count), host], capture_output=True, text=True)
         if output.returncode == 0:
-            return f"{host} is online"
+            return f"{Fore.GREEN}{host} is online{Style.RESET_ALL}"
         else:
-            return f"{host} is offline"
+            return f"{Fore.RED}{host} is offline{Style.RESET_ALL}"
     except Exception as e:
-        return f"Error pinging {host}: {str(e)}"
+        return f"{Fore.YELLOW}Error pinging {host}: {str(e)}{Style.RESET_ALL}"
 
 def ping_hosts_concurrently(hosts, count):
     with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
