@@ -21,6 +21,15 @@
 #
 #    - Deactivate the virtual environment when you're done:
 #      deactivate
+#
+# 5. To update the requirements.txt file after installing new packages:
+#    - Install or update packages inside the virtual environment using pip:
+#      pip install <package_name>
+#    
+#    - After installing the new package(s), update requirements.txt by running:
+#      pip freeze > requirements.txt
+#    This will regenerate the requirements.txt file with the current list of 
+#    installed packages and their versions.
 # ==============================================================================
 
 # Check if Python3 is installed
