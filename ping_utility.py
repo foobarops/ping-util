@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 def ping_host(host):
     try:
@@ -22,6 +23,15 @@ def ping_hosts(hosts):
 if __name__ == "__main__":
     # List of hosts to ping
     hosts = ["google.com", "example.com", "192.168.1.1", "localhost"]
-    
-    # Ping all the hosts and display the results
-    ping_hosts(hosts)
+
+    # Define the interval (in seconds) between pings
+    interval = 10  # Ping every 10 seconds
+
+    # Loop to ping hosts constantly
+    while True:
+        print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        ping_hosts(hosts)
+        
+        # Wait for the next interval
+        time.sleep(interval)
+        print("\n" + "-"*40 + "\n")
