@@ -3,10 +3,12 @@ import time
 import sys
 import os
 import socket
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
 from ipaddress import ip_address
+from math import ceil
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
@@ -92,6 +94,39 @@ def display_countdown(interval):
         print(f"{Fore.CYAN}Status: Idle (Next ping in {remaining} seconds){Style.RESET_ALL}", end="\r")
         time.sleep(1)
 
+def split_results_into_columns(results, max_rows):
+    """Split results into multiple columns based on max_rows."""
+    num_results = len(results)
+    num_columns = ceil(num_results / max_rows)  # Calculate how many columns are needed
+
+    # Split the results into chunks, one for each column
+    columns = [results[i:i + max_rows] for i in range(0, num_results, max_rows)]
+    
+    # Transpose rows to columns
+    return list(map(list, zip(*columns)))
+
+def display_results_in_columns(results, headers):
+    """Display results in columns if they exceed screen height."""
+    # Get the terminal height and width
+    terminal_size = shutil.get_terminal_size()
+    terminal_height = terminal_size.lines - 4  # Adjust for header and status
+    terminal_width = terminal_size.columns
+
+    if len(results) > terminal_height:
+        # Split results into multiple columns
+        results_in_columns = split_results_into_columns(results, terminal_height)
+
+        # Format the results as a table for each column
+        formatted_results = [tabulate(column, headers=headers, tablefmt="grid") for column in results_in_columns]
+        
+        # Display results side by side, adjust padding to fit the screen width
+        col_width = terminal_width // len(results_in_columns)
+        formatted_table = "\n".join(["".join([f"{row:{col_width}}" for row in column]) for column in results_in_columns])
+        print(formatted_table)
+    else:
+        # If no need to split, just display the results normally
+        print(tabulate(results, headers=headers, tablefmt="grid"))
+
 if __name__ == "__main__":
     # Default values
     count = 4
@@ -136,16 +171,15 @@ if __name__ == "__main__":
         # Sort the results by IP networks and hostnames
         sorted_results = sort_by_ip_and_domain(results)
 
-        # Format new results into a table
-        table = tabulate(sorted_results, headers=["Host", "Status"], tablefmt="grid")
-
         # After ping is complete, clear the screen and show the new results
         clear_screen()
         print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(table)
+
+        # Display results in multiple columns if needed
+        display_results_in_columns(sorted_results, headers=["Host", "Status"])
 
         # Update the previous results to the new table
-        previous_table = table
+        previous_table = tabulate(sorted_results, headers=["Host", "Status"], tablefmt="grid")
 
         # Show dynamic countdown while waiting for the next round
         display_countdown(interval)
