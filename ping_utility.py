@@ -2,12 +2,21 @@ import subprocess
 import time
 import sys
 import os
+import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
+from ipaddress import ip_address
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
+
+def resolve_hostname(host):
+    """Resolve hostname to IP address."""
+    try:
+        return socket.gethostbyname(host)
+    except socket.gaierror:
+        return None
 
 def ping_host(host, count):
     try:
@@ -53,6 +62,25 @@ def clear_screen():
     # Clear command based on the operating system
     os.system('cls' if sys.platform.lower().startswith('win') else 'clear')
 
+def sort_by_ip_network(results):
+    """Sort hosts by IP address networks."""
+    # Resolve hostnames to IP addresses
+    ip_resolved_results = []
+    for host, status in results:
+        ip = resolve_hostname(host)
+        if ip:
+            ip_resolved_results.append((host, status, ip_address(ip)))
+        else:
+            ip_resolved_results.append((host, status, None))  # For unresolved hosts
+    
+    # Sort by IP address (None values go to the end)
+    ip_resolved_results.sort(key=lambda x: (x[2] is None, x[2]))
+
+    # Remove IP address before printing the results (optional)
+    sorted_results = [(host, status) for host, status, _ in ip_resolved_results]
+
+    return sorted_results
+
 if __name__ == "__main__":
     # Default values
     count = 4
@@ -94,8 +122,11 @@ if __name__ == "__main__":
         # Ping hosts and get new results
         results = ping_hosts_concurrently(hosts, count)
 
+        # Sort the results by IP networks
+        sorted_results = sort_by_ip_network(results)
+
         # Format new results into a table
-        table = tabulate(results, headers=["Host", "Status"], tablefmt="grid")
+        table = tabulate(sorted_results, headers=["Host", "Status"], tablefmt="grid")
 
         # After ping is complete, clear the screen and show the new results
         clear_screen()
