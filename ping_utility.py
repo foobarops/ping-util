@@ -86,6 +86,12 @@ def sort_by_ip_and_domain(results):
 
     return sorted_results
 
+def display_countdown(interval):
+    """Display a countdown in seconds, updating the screen every second."""
+    for remaining in range(interval, 0, -1):
+        print(f"{Fore.CYAN}Status: Idle (Next ping in {remaining} seconds){Style.RESET_ALL}", end="\r")
+        time.sleep(1)
+
 if __name__ == "__main__":
     # Default values
     count = 4
@@ -141,8 +147,5 @@ if __name__ == "__main__":
         # Update the previous results to the new table
         previous_table = table
 
-        # Show status as "Idle" while waiting for the next round
-        print(f"{Fore.CYAN}Status: Idle (Next ping in {interval} seconds){Style.RESET_ALL}")
-        
-        # Wait for the next interval before running the next round of pings
-        time.sleep(interval)
+        # Show dynamic countdown while waiting for the next round
+        display_countdown(interval)
