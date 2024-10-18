@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
 from ipaddress import ip_address
-from math import ceil
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
@@ -94,38 +93,35 @@ def display_countdown(interval):
         print(f"{Fore.CYAN}Status: Idle (Next ping in {remaining} seconds){Style.RESET_ALL}", end="\r")
         time.sleep(1)
 
-def split_results_into_columns(results, max_rows):
-    """Split results into multiple columns based on max_rows."""
-    num_results = len(results)
-    num_columns = ceil(num_results / max_rows)  # Calculate how many columns are needed
-
-    # Split the results into chunks, one for each column
-    columns = [results[i:i + max_rows] for i in range(0, num_results, max_rows)]
-    
-    # Transpose rows to columns
-    return list(map(list, zip(*columns)))
-
-def display_results_in_columns(results, headers):
-    """Display results in columns if they exceed screen height."""
-    # Get the terminal height and width
+def format_table_multi_column(results):
+    """Format the results into multiple columns if screen height is not enough."""
+    # Get terminal size
     terminal_size = shutil.get_terminal_size()
-    terminal_height = terminal_size.lines - 4  # Adjust for header and status
-    terminal_width = terminal_size.columns
+    max_rows = terminal_size.lines - 5  # Reserve some rows for headers, status, etc.
 
-    if len(results) > terminal_height:
-        # Split results into multiple columns
-        results_in_columns = split_results_into_columns(results, terminal_height)
+    # If the number of hosts fits in one column, just print a single table
+    if len(results) <= max_rows:
+        return tabulate(results, headers=["Host", "Status"], tablefmt="grid")
 
-        # Format the results as a table for each column
-        formatted_results = [tabulate(column, headers=headers, tablefmt="grid") for column in results_in_columns]
-        
-        # Display results side by side, adjust padding to fit the screen width
-        col_width = terminal_width // len(results_in_columns)
-        formatted_table = "\n".join(["".join([f"{row:{col_width}}" for row in column]) for column in results_in_columns])
-        print(formatted_table)
-    else:
-        # If no need to split, just display the results normally
-        print(tabulate(results, headers=headers, tablefmt="grid"))
+    # Split the results into multiple columns
+    columns_needed = (len(results) + max_rows - 1) // max_rows  # Round up to determine columns
+    column_width = len(results) // columns_needed  # Hosts per column
+
+    # Create rows for the table
+    rows = []
+    for i in range(max_rows):
+        row = []
+        for j in range(columns_needed):
+            idx = i + j * max_rows
+            if idx < len(results):
+                row.append(f"{results[idx][0]:<20} {results[idx][1]}")
+            else:
+                row.append("")  # Empty cell if there are no more hosts
+        rows.append(row)
+
+    # Format the table without headers for side-by-side columns
+    table = tabulate(rows, tablefmt="grid")
+    return table
 
 if __name__ == "__main__":
     # Default values
@@ -171,15 +167,16 @@ if __name__ == "__main__":
         # Sort the results by IP networks and hostnames
         sorted_results = sort_by_ip_and_domain(results)
 
+        # Format new results into a table with multiple columns if needed
+        table = format_table_multi_column(sorted_results)
+
         # After ping is complete, clear the screen and show the new results
         clear_screen()
         print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-        # Display results in multiple columns if needed
-        display_results_in_columns(sorted_results, headers=["Host", "Status"])
+        print(table)
 
         # Update the previous results to the new table
-        previous_table = tabulate(sorted_results, headers=["Host", "Status"], tablefmt="grid")
+        previous_table = table
 
         # Show dynamic countdown while waiting for the next round
         display_countdown(interval)
