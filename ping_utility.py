@@ -1,6 +1,7 @@
 import subprocess
 import time
 import sys
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
@@ -34,6 +35,10 @@ def ping_hosts_concurrently(hosts, count):
                 results.append((host, f"Error occurred: {e}"))
     return results
 
+def clear_screen():
+    # Clear command based on the operating system
+    os.system('cls' if sys.platform.lower().startswith('win') else 'clear')
+
 if __name__ == "__main__":
     # Default values
     count = 4
@@ -62,10 +67,13 @@ if __name__ == "__main__":
 
     # Loop to ping hosts constantly
     while True:
-        print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        
         # Ping hosts and get results
         results = ping_hosts_concurrently(hosts, count)
+
+        # Clear the screen right before printing new results
+        clear_screen()
+
+        print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Format results in a table
         table = tabulate(results, headers=["Host", "Status"], tablefmt="grid")
@@ -73,6 +81,6 @@ if __name__ == "__main__":
         # Print the table
         print(table)
         
-        # Wait for the next interval
+        # Wait for the next interval before running the next round of pings
         time.sleep(interval)
         print("\n" + "-"*40 + "\n")
