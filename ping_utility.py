@@ -6,14 +6,15 @@ import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
-from ipaddress import ip_address, AddressValueError
+from ipaddress import ip_address
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
 
 def resolve_hostname(host):
-    """Resolve hostname to IP address."""
+    """Resolve hostname to IP address, return None if it's a domain."""
     try:
+        # Try to resolve the hostname to an IP address
         return socket.gethostbyname(host)
     except socket.gaierror:
         return None
@@ -63,30 +64,26 @@ def clear_screen():
     os.system('cls' if sys.platform.lower().startswith('win') else 'clear')
 
 def sort_by_ip_and_domain(results):
-    """Sort hosts by IP address, and place hostnames (domains) at the end."""
-    # Resolve hostnames to IP addresses
-    ip_resolved_results = []
+    """Sort hosts by IP addresses first, then by domain names alphabetically."""
+    ip_results = []
     domain_results = []
 
+    # Resolve hostnames to IP addresses and separate them into IP and domain groups
     for host, status in results:
         ip = resolve_hostname(host)
         if ip:
-            try:
-                ip_obj = ip_address(ip)
-                ip_resolved_results.append((host, status, ip_obj))
-            except AddressValueError:
-                domain_results.append((host, status))  # Add to domain list if resolution fails
+            ip_results.append((host, status, ip_address(ip)))  # Store IP as numerical type
         else:
-            domain_results.append((host, status))  # Unresolved hosts (domains) go here
+            domain_results.append((host, status))  # Keep domain names in a separate list
 
-    # Sort IPs numerically
-    ip_resolved_results.sort(key=lambda x: x[2])
+    # Sort IP results by IP address (numerically)
+    ip_results.sort(key=lambda x: x[2])
 
-    # Sort domains alphabetically
+    # Sort domain results alphabetically by the hostname
     domain_results.sort(key=lambda x: x[0])
 
-    # Combine IP sorted list and domain sorted list (domains at the end)
-    sorted_results = [(host, status) for host, status, _ in ip_resolved_results] + domain_results
+    # Combine IP results and domain results (domain results placed after IP results)
+    sorted_results = [(host, status) for host, status, _ in ip_results] + domain_results
 
     return sorted_results
 
@@ -131,7 +128,7 @@ if __name__ == "__main__":
         # Ping hosts and get new results
         results = ping_hosts_concurrently(hosts, count)
 
-        # Sort the results by IP and then by domain (hostnames at the end)
+        # Sort the results by IP addresses first, then by domains
         sorted_results = sort_by_ip_and_domain(results)
 
         # Format new results into a table
