@@ -35,16 +35,18 @@ def ping_host(host, count):
         return (host, f"{Fore.YELLOW}Error: {str(e)}{Style.RESET_ALL}")
 
 def ping_hosts_concurrently(hosts, count):
-    results = []
+    # Prepare a list to store results, initialized with None
+    results = [None] * len(hosts)
     with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
-        futures = {executor.submit(ping_host, host, count): host for host in hosts}
+        # Submit tasks and store futures in the same order as hosts
+        futures = {executor.submit(ping_host, host, count): idx for idx, host in enumerate(hosts)}
         for future in as_completed(futures):
-            host = futures[future]
+            idx = futures[future]  # Get the original index of the host
             try:
                 result = future.result()
-                results.append(result)
+                results[idx] = result  # Store the result in the correct position
             except Exception as e:
-                results.append((host, f"Error occurred: {e}"))
+                results[idx] = (hosts[idx], f"Error occurred: {e}")
     return results
 
 def clear_screen():
