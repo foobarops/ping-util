@@ -11,10 +11,22 @@ init(autoreset=True)
 
 def ping_host(host, count):
     try:
-        # Determine the parameter for ping count based on the OS
-        param = '-n' if sys.platform.lower().startswith('win') else '-c'
-        # Ping the host using the 'ping' command
-        output = subprocess.run(["ping", param, str(count), host], capture_output=True, text=True)
+        # Determine the parameter for ping count and timeout based on the OS
+        if sys.platform.lower().startswith('win'):
+            param_count = '-n'
+            param_timeout = '-w'  # Timeout in milliseconds
+            timeout_value = '1000'  # 1 second = 1000 ms
+        else:
+            param_count = '-c'
+            param_timeout = '-W'  # Timeout in seconds
+            timeout_value = '1'  # 1 second
+
+        # Ping the host using the 'ping' command with a timeout
+        output = subprocess.run(
+            ["ping", param_count, str(count), param_timeout, timeout_value, host], 
+            capture_output=True, 
+            text=True
+        )
         if output.returncode == 0:
             return (host, f"{Fore.GREEN}Online{Style.RESET_ALL}")
         else:
