@@ -116,8 +116,7 @@ def format_table_multi_column(results):
 
     # Check if the number of columns exceeds the max allowed
     if columns_needed > MAX_COLUMNS:
-        excess_columns = columns_needed - MAX_COLUMNS
-        hosts_to_remove = excess_columns * max_rows
+        hosts_to_remove = len(results) - MAX_COLUMNS * max_rows
         print(f"{Fore.RED}Error: Exceeded maximum allowed columns ({MAX_COLUMNS}). "
               f"The screen cannot display {columns_needed} columns.{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}Suggestion: Remove at least {hosts_to_remove} hosts or try resizing the terminal window.{Style.RESET_ALL}")
