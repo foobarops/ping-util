@@ -79,22 +79,34 @@ if __name__ == "__main__":
         print("Usage: python script.py [count] [interval] host1 host2 ...")
         sys.exit(1)
 
+    # Initialize the previous results as an empty table
+    previous_table = ""
+
     # Loop to ping hosts constantly
     while True:
-        # Ping hosts and get results
+        # If there's a previous result, print it before processing
+        if previous_table:
+            clear_screen()
+            print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(previous_table)
+            print(f"{Fore.CYAN}Status: Processing...{Style.RESET_ALL}")
+        
+        # Ping hosts and get new results
         results = ping_hosts_concurrently(hosts, count)
 
-        # Clear the screen right before printing new results
-        clear_screen()
-
-        print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        # Format results in a table
+        # Format new results into a table
         table = tabulate(results, headers=["Host", "Status"], tablefmt="grid")
-        
-        # Print the table
+
+        # After ping is complete, clear the screen and show the new results
+        clear_screen()
+        print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(table)
+
+        # Update the previous results to the new table
+        previous_table = table
+
+        # Show status as "Idle" while waiting for the next round
+        print(f"{Fore.CYAN}Status: Idle (Next ping in {interval} seconds){Style.RESET_ALL}")
         
         # Wait for the next interval before running the next round of pings
         time.sleep(interval)
-        print("\n" + "-"*40 + "\n")
