@@ -12,6 +12,9 @@ from ipaddress import ip_address
 # Initialize colorama for cross-platform support
 init(autoreset=True)
 
+# Max number of columns allowed
+MAX_COLUMNS = 4  # You can adjust this based on your needs
+
 def resolve_hostname(host):
     """Resolve hostname to IP address, or return None if unable."""
     try:
@@ -97,7 +100,7 @@ def format_table_multi_column(results):
     """Format the results into multiple columns if screen height is not enough."""
     # Get terminal size
     terminal_size = shutil.get_terminal_size()
-    
+
     # Account for header (1 line) and separators (1 line per row + 1 for header)
     available_height = terminal_size.lines
     header_lines = 3  # Header + separator lines for the header and first row
@@ -110,6 +113,12 @@ def format_table_multi_column(results):
 
     # Split the results into multiple columns
     columns_needed = (len(results) + max_rows - 1) // max_rows  # Round up to determine columns
+
+    # Check if the number of columns exceeds the max allowed
+    if columns_needed > MAX_COLUMNS:
+        print(f"{Fore.RED}Error: Exceeded maximum allowed columns ({MAX_COLUMNS}). The screen cannot display {columns_needed} columns. Please reduce the number of hosts.{Style.RESET_ALL}")
+        sys.exit(1)
+
     column_width = len(results) // columns_needed  # Hosts per column
 
     # Create rows for the table
