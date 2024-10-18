@@ -63,28 +63,26 @@ def clear_screen():
     os.system('cls' if sys.platform.lower().startswith('win') else 'clear')
 
 def sort_by_ip_and_domain(results):
-    """Sort hosts by IP address first, then by hostname alphabetically if not resolved."""
-    ip_resolved_results = []
-    unresolved_results = []
+    """Sort IPs numerically and hostnames alphabetically, placing hostnames at the end."""
+    ip_results = []
+    domain_results = []
 
-    # Resolve hostnames to IP addresses
     for host, status in results:
         ip = resolve_hostname(host)
-        if ip:
-            # Append with resolved IP address for sorting
-            ip_resolved_results.append((host, status, ip_address(ip)))
+        if ip and ip == host:  # If it's an IP address (not a resolved domain)
+            ip_results.append((host, status, ip_address(ip)))
         else:
-            # Keep hostnames that didn't resolve separately
-            unresolved_results.append((host, status))
+            # Treat it as a domain (whether it resolves to an IP or not)
+            domain_results.append((host, status))
 
     # Sort the resolved IP addresses numerically
-    ip_resolved_results.sort(key=lambda x: x[2])
+    ip_results.sort(key=lambda x: x[2])
 
-    # Sort unresolved hostnames alphabetically by domain name
-    unresolved_results.sort(key=lambda x: x[0])
+    # Sort hostnames alphabetically by domain name
+    domain_results.sort(key=lambda x: x[0])
 
-    # Combine both lists, with IP-sorted results first, then unresolved hostnames
-    sorted_results = [(host, status) for host, status, _ in ip_resolved_results] + unresolved_results
+    # Combine both lists, with IP-sorted results first, then domains
+    sorted_results = [(host, status) for host, status, _ in ip_results] + domain_results
 
     return sorted_results
 
