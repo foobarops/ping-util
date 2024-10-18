@@ -4,6 +4,7 @@ import sys
 import os
 import socket
 import shutil
+import signal
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
@@ -140,7 +141,15 @@ def format_table_multi_column(results):
     table = tabulate(rows, tablefmt="grid")
     return table
 
+def signal_handler(sig, frame):
+    """Handle signals to exit gracefully."""
+    print("\nExiting gracefully. Goodbye!")
+    sys.exit(0)
+
 if __name__ == "__main__":
+    # Set up signal handling for graceful exit
+    signal.signal(signal.SIGINT, signal_handler)
+
     # Default values
     count = 4
     interval = 10
