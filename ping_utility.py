@@ -97,7 +97,12 @@ def format_table_multi_column(results):
     """Format the results into multiple columns if screen height is not enough."""
     # Get terminal size
     terminal_size = shutil.get_terminal_size()
-    max_rows = terminal_size.lines - 5  # Reserve some rows for headers, status, etc.
+    
+    # Account for header (1 line) and separators (1 line per row + 1 for header)
+    available_height = terminal_size.lines
+    header_lines = 3  # Header + separator lines for the header and first row
+    row_and_separator = 2  # Each row and separator take 2 lines
+    max_rows = (available_height - header_lines) // row_and_separator
 
     # If the number of hosts fits in one column, just print a single table
     if len(results) <= max_rows:
@@ -107,28 +112,21 @@ def format_table_multi_column(results):
     columns_needed = (len(results) + max_rows - 1) // max_rows  # Round up to determine columns
     column_width = len(results) // columns_needed  # Hosts per column
 
-    # Prepare the list of headers for each column
-    header = ["Host", "Status"]
-    
-    # Split results into rows based on max_rows
-    rows = [results[i:i + max_rows] for i in range(0, len(results), max_rows)]
+    # Create rows for the table
+    rows = []
+    for i in range(max_rows):
+        row = []
+        for j in range(columns_needed):
+            idx = i + j * max_rows
+            if idx < len(results):
+                row.append(f"{results[idx][0]:<20} {results[idx][1]}")
+            else:
+                row.append("")  # Empty cell if there are no more hosts
+        rows.append(row)
 
-    # Ensure each "row" for display has the same number of rows
-    max_rows_per_column = len(rows[0])
-    
-    # Format each column and ensure the headers and borders are included
-    columns = []
-    for row in rows:
-        column = tabulate(row, headers=header, tablefmt="grid").split("\n")
-        columns.append(column)
-    
-    # Merge columns side by side (row by row)
-    final_output = []
-    for row_index in range(len(columns[0])):  # Iterate over rows
-        row_content = "    ".join(col[row_index] for col in columns if row_index < len(col))
-        final_output.append(row_content)
-
-    return "\n".join(final_output)
+    # Format the table without headers for side-by-side columns
+    table = tabulate(rows, tablefmt="grid")
+    return table
 
 if __name__ == "__main__":
     # Default values
