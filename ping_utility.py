@@ -91,7 +91,7 @@ def sort_by_ip_and_domain(results):
 def display_countdown(interval):
     """Display a countdown in seconds, updating the screen every second."""
     for remaining in range(interval, 0, -1):
-        print(f"{Fore.CYAN}Status: Idle (Next ping in {remaining} seconds){Style.RESET_ALL}", end="\r")
+        update_status(f"Idle (Next ping in {remaining} seconds)")
         time.sleep(1)
 
 def get_max_columns(results):
@@ -155,6 +155,15 @@ def format_table_multi_column(results):
     table = tabulate(rows, tablefmt="grid")
     return table
 
+def update_status(status):
+    """Update the status in the top-right corner of the terminal."""
+    terminal_size = shutil.get_terminal_size()
+    status_length = len(status)
+    
+    # Move cursor to the top-right corner, adjust for the length of the status message
+    sys.stdout.write(f"\033[{1};{terminal_size.columns - status_length}H{Fore.CYAN}{status}{Style.RESET_ALL}")
+    sys.stdout.flush()
+
 def signal_handler(sig, frame):
     """Handle signals to exit gracefully."""
     print("\nExiting gracefully. Goodbye!")
@@ -199,7 +208,7 @@ if __name__ == "__main__":
             clear_screen()
             print(f"Pinging hosts at {time.strftime('%Y-%m-%d %H:%M:%S')}")
             print(previous_table)
-            print(f"{Fore.CYAN}Status: Processing...{Style.RESET_ALL}")
+            update_status("Processing...")
         
         # Ping hosts and get new results
         results = ping_hosts_concurrently(hosts, count)
