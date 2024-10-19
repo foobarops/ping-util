@@ -13,9 +13,6 @@ from ipaddress import ip_address
 # Initialize colorama for cross-platform support
 init(autoreset=True)
 
-# Max number of columns allowed
-MAX_COLUMNS = 4  # You can adjust this based on your needs
-
 def resolve_hostname(host):
     """Resolve hostname to IP address, or return None if unable."""
     try:
@@ -97,10 +94,27 @@ def display_countdown(interval):
         print(f"{Fore.CYAN}Status: Idle (Next ping in {remaining} seconds){Style.RESET_ALL}", end="\r")
         time.sleep(1)
 
+def get_max_columns(results):
+    """Determine the maximum number of columns that can fit in the terminal based on the width."""
+    # Get terminal size
+    terminal_size = shutil.get_terminal_size()
+
+    # Estimate column width (length of longest host + status)
+    longest_host = max([len(host) for host, _ in results])
+    column_width = longest_host + 20  # Extra space for status
+
+    # Calculate the number of columns that can fit in the available width
+    max_columns = terminal_size.columns // column_width
+
+    return max_columns if max_columns > 0 else 1  # Ensure at least 1 column
+
 def format_table_multi_column(results):
     """Format the results into multiple columns if screen height is not enough."""
     # Get terminal size
     terminal_size = shutil.get_terminal_size()
+
+    # Dynamically calculate max columns
+    max_columns = get_max_columns(results)
 
     # Account for header (1 line) and separators (1 line per row + 1 for header)
     available_height = terminal_size.lines
@@ -116,9 +130,9 @@ def format_table_multi_column(results):
     columns_needed = (len(results) + max_rows - 1) // max_rows  # Round up to determine columns
 
     # Check if the number of columns exceeds the max allowed
-    if columns_needed > MAX_COLUMNS:
-        hosts_to_remove = len(results) - MAX_COLUMNS * max_rows
-        print(f"{Fore.RED}Error: Exceeded maximum allowed columns ({MAX_COLUMNS}). "
+    if columns_needed > max_columns:
+        hosts_to_remove = len(results) - max_columns * max_rows
+        print(f"{Fore.RED}Error: Exceeded maximum allowed columns ({max_columns}). "
               f"The screen cannot display {columns_needed} columns.{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}Suggestion: Remove at least {hosts_to_remove} hosts or try resizing the terminal window.{Style.RESET_ALL}")
         sys.exit(1)
