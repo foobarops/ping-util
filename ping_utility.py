@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Style, init
 from tabulate import tabulate
 from ipaddress import ip_address
+import re
 
 # Initialize colorama for cross-platform support
 init(autoreset=True)
@@ -38,8 +39,19 @@ def ping_host(host, count):
             capture_output=True, 
             text=True
         )
+
         if output.returncode == 0:
-            return (host, f"{Fore.GREEN}Online{Style.RESET_ALL}")
+            # Extract latency from the output using regex (OS-specific)
+            if sys.platform.lower().startswith('win'):
+                # On Windows, the average latency is usually found like "Average = 32ms"
+                match = re.search(r'Average = (\d+ms)', output.stdout)
+                latency = match.group(1) if match else "N/A"
+            else:
+                # On Unix-like systems, latency is reported like "rtt min/avg/max/mdev = 0.123/0.456/0.789/0.012 ms"
+                match = re.search(r'rtt .* = .*?/(\d+\.\d+)/', output.stdout)
+                latency = f"{match.group(1)} ms" if match else "N/A"
+            
+            return (host, f"{Fore.GREEN}{latency}{Style.RESET_ALL}")
         else:
             return (host, f"{Fore.RED}Offline{Style.RESET_ALL}")
     except Exception as e:
@@ -124,7 +136,7 @@ def format_table_multi_column(results):
 
     # If the number of hosts fits in one column, just print a single table
     if len(results) <= max_rows:
-        return tabulate(results, headers=["Host", "Status"], tablefmt="grid")
+        return tabulate(results, headers=["Host", "Latency"], tablefmt="grid")
 
     # Split the results into multiple columns
     columns_needed = (len(results) + max_rows - 1) // max_rows  # Round up to determine columns
