@@ -49,11 +49,11 @@ def ping_host(host, count):
             else:
                 # On Unix-like systems, latency is reported like "rtt min/avg/max/mdev = 0.123/0.456/0.789/0.012 ms"
                 match = re.search(r'.* min/avg/max/.*dev = .*?/(\d+\.\d+)/.*', output.stdout)
-                latency = f"{match.group(1)} ms" if match else "N/A"
+                latency = f"{float(match.group(1)):>9.3f} ms" if match else "N/A"
             
             return (host, f"{Fore.GREEN}{latency}{Style.RESET_ALL}")
         else:
-            return (host, f"{Fore.RED}Offline{Style.RESET_ALL}")
+            return (host, f"{Fore.RED}{'Offline':>12}{Style.RESET_ALL}")
     except Exception as e:
         return (host, f"{Fore.YELLOW}Error: {str(e)}{Style.RESET_ALL}")
 
