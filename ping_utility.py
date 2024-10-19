@@ -48,7 +48,7 @@ def ping_host(host, count):
                 latency = match.group(1) if match else "N/A"
             else:
                 # On Unix-like systems, latency is reported like "rtt min/avg/max/mdev = 0.123/0.456/0.789/0.012 ms"
-                match = re.search(r'rtt .* = .*?/(\d+\.\d+)/', output.stdout)
+                match = re.search(r'.* min/avg/max/.*dev = .*?/(\d+\.\d+)/.*', output.stdout)
                 latency = f"{match.group(1)} ms" if match else "N/A"
             
             return (host, f"{Fore.GREEN}{latency}{Style.RESET_ALL}")
